@@ -83,7 +83,9 @@ generate: \
 	generate-authn-go \
 	generate-authn-python \
 	generate-envoy-go \
-	generate-envoy-python
+	generate-envoy-python \
+	generate-odic-go \
+	generate-odic-python
 
 #####################
 # mcp/...
@@ -267,6 +269,33 @@ clean-rbac:
 
 
 #####################
+# oidc/...
+#####################
+
+oidc_v1alpha1_path := oidc/v1alpha1
+oidc_v1alpha1_protos := $(shell find $(oidc_v1alpha1_path) -type f -name '*.proto' | sort)
+oidc_v1alpha1_pb_gos := $(oidc_v1alpha1_protos:.proto=.pb.go)
+oidc_v1alpha1_pb_pythons := $(oidc_v1alpha1_protos:.proto=_pb2.py)
+oidc_v1alpha1_pb_doc := $(oidc_v1alpha1_path)/istio.oidc.v1alpha1.pb.html
+
+generate-odic-go: $(oidc_v1alpha1_pb_gos) $(oidc_v1alpha1_pb_doc)
+
+$(oidc_v1alpha1_pb_gos) $(oidc_v1alpha1_pb_doc): $(oidc_v1alpha1_protos)
+	## Generate oidc/v1alpha1/*.pb.go
+	@$(docker_gen) $(gogofast_plugin) $(protoc_gen_docs_plugin)$(oidc_v1alpha1_path) $^
+
+generate-oidc-python: $(oidc_v1alpha1_pb_pythons)
+
+$(oidc_v1alpha1_pb_pythons): $(oidc_v1alpha1_protos)
+	## Generate python/istio_api/oidc/v1alpha1/*_pb2.py
+	@$(docker_gen) $(protoc_gen_python_plugin) $^
+
+clean-oidc:
+	rm -f $(oidc_v1alpha1_pb_gos)
+	rm -f $(oidc_v1alpha1_pb_doc)
+
+
+#####################
 # authentication/...
 #####################
 
@@ -332,4 +361,5 @@ clean: 	clean-mcp \
 	clean-rbac \
 	clean-authn \
 	clean-envoy \
-	clean-python
+	clean-python \
+	clean-oidc
